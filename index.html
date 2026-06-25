@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en" data-fl-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vexel Playground</title>
+    <link rel="icon" href="vexel.png">
+    <style>
+        :root {
+            --bg: #fafaf9;
+            --surface: #ffffff;
+            --border: #e7e5e4;
+            --text: #1c1917;
+            --text-secondary: #78716c;
+            --text-muted: #a8a29e;
+            --accent: #ff5722;
+            --accent-hover: #ff7043;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --shadow: 0 2px 8px rgba(0,0,0,0.06);
+            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0c0a09;
+                --surface: #1c1917;
+                --border: #292524;
+                --text: #fafaf9;
+                --text-secondary: #a8a29e;
+                --text-muted: #78716c;
+                --shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; overflow:hidden; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { display:flex; background:var(--bg); color:var(--text); }
+
+        .toolbar {
+            width:48px;
+            background:var(--surface);
+            border-right:1px solid var(--border);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            padding:10px 0;
+            gap:2px;
+            z-index:20;
+        }
+        .toolbar-logo {
+            width:32px;
+            height:32px;
+            margin-bottom:10px;
+            object-fit:contain;
+        }
+        .toolbar-btn {
+            width:36px;
+            height:36px;
+            border-radius:var(--radius);
+            border:none;
+            background:transparent;
+            color:var(--text-secondary);
+            cursor:pointer;
+            font-size:13px;
+            font-weight:500;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            transition:var(--transition);
+            position:relative;
+        }
+        .toolbar-btn:hover { background:var(--border); color:var(--text); }
+        .toolbar-btn.active { background:var(--accent); color:#fff; }
+        .toolbar-btn.active:hover { background:var(--accent-hover); }
+        .toolbar-sep {
+            width:24px;
+            height:1px;
+            background:var(--border);
+            margin:6px 0;
+        }
+
+        .panel {
+            width:260px;
+            background:var(--surface);
+            border-right:1px solid var(--border);
+            display:flex;
+            flex-direction:column;
+            z-index:10;
+            overflow-y:auto;
+        }
+        .panel-header {
+            padding:12px 14px;
+            font-size:11px;
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+            color:var(--text-muted);
+            border-bottom:1px solid var(--border);
+        }
+        .panel-section {
+            padding:8px 0;
+            border-bottom:1px solid var(--border);
+        }
+        .panel-row {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:6px 14px;
+            font-size:12px;
+            color:var(--text-secondary);
+            cursor:pointer;
+            transition:var(--transition);
+        }
+        .panel-row:hover { background:rgba(0,0,0,0.03); }
+        .panel-input {
+            width:100%;
+            padding:5px 8px;
+            border:1px solid var(--border);
+            border-radius:4px;
+            font-size:11px;
+            background:var(--bg);
+            color:var(--text);
+            outline:none;
+            font-family:inherit;
+        }
+        .panel-input:focus { border-color:var(--accent); }
+        .panel-label {
+            font-size:10px;
+            color:var(--text-muted);
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+            padding:6px 14px 2px;
+        }
+
+        .canvas-area {
+            flex:1;
+            position:relative;
+            overflow:hidden;
+            background:var(--bg);
+        }
+        .canvas-area canvas {
+            position:absolute;
+            top:0;
+            left:0;
+        }
+        .status-bar {
+            position:absolute;
+            bottom:0;
+            left:0;
+            right:0;
+            height:28px;
+            background:var(--surface);
+            border-top:1px solid var(--border);
+            display:flex;
+            align-items:center;
+            padding:0 12px;
+            font-size:10px;
+            color:var(--text-muted);
+            gap:16px;
+            z-index:10;
+        }
+        .status-bar span { white-space:nowrap; }
+        .zoom-control {
+            position:absolute;
+            bottom:36px;
+            right:12px;
+            display:flex;
+            flex-direction:column;
+            gap:2px;
+            z-index:10;
+        }
+        .zoom-btn {
+            width:28px;
+            height:28px;
+            border-radius:var(--radius);
+            border:1px solid var(--border);
+            background:var(--surface);
+            color:var(--text);
+            cursor:pointer;
+            font-size:16px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            transition:var(--transition);
+        }
+        .zoom-btn:hover { background:var(--border); }
+        .zoom-label {
+            font-size:9px;
+            color:var(--text-muted);
+            text-align:center;
+            padding:4px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <img src="vexel.png" alt="Vexel" class="toolbar-logo">
+        <button class="toolbar-btn active" title="Select" data-tool="select">S</button>
+        <button class="toolbar-btn" title="Rectangle" data-tool="rectangle">R</button>
+        <button class="toolbar-btn" title="Ellipse" data-tool="ellipse">E</button>
+        <button class="toolbar-btn" title="Line" data-tool="line">L</button>
+        <button class="toolbar-btn" title="Pen" data-tool="pen">P</button>
+        <button class="toolbar-btn" title="Text" data-tool="text">T</button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" title="Undo" id="btnUndo">U</button>
+        <button class="toolbar-btn" title="Redo" id="btnRedo">R</button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" title="Zoom In" id="btnZoomIn">+</button>
+        <button class="toolbar-btn" title="Zoom Out" id="btnZoomOut">-</button>
+    </div>
+
+    <div class="panel" id="propertiesPanel">
+        <div class="panel-header">Properties</div>
+        <div id="propertiesContent">
+            <div class="panel-section">
+                <div class="panel-label">Position</div>
+                <div class="panel-row">
+                    X <input type="number" class="panel-input" id="propX" value="0" style="width:60px;">
+                    Y <input type="number" class="panel-input" id="propY" value="0" style="width:60px;">
+                </div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">Size</div>
+                <div class="panel-row">
+                    W <input type="number" class="panel-input" id="propW" value="100" style="width:60px;">
+                    H <input type="number" class="panel-input" id="propH" value="100" style="width:60px;">
+                </div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">Fill</div>
+                <div class="panel-row">
+                    <input type="color" id="propFill" value="#ff5722" style="width:32px;height:24px;border:none;cursor:pointer;">
+                    <input type="text" class="panel-input" id="propFillHex" value="#FF5722" style="flex:1;">
+                </div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">Stroke</div>
+                <div class="panel-row">
+                    <input type="color" id="propStroke" value="#000000" style="width:32px;height:24px;border:none;cursor:pointer;">
+                    <input type="number" class="panel-input" id="propStrokeWidth" value="1" style="width:50px;" min="0" max="50">
+                </div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">Opacity</div>
+                <div class="panel-row">
+                    <input type="range" id="propOpacity" value="100" min="0" max="100" style="flex:1;">
+                    <span id="propOpacityVal" style="font-size:10px;">100%</span>
+                </div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-label">Rotation</div>
+                <div class="panel-row">
+                    <input type="number" class="panel-input" id="propRotation" value="0" style="width:60px;"> deg
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="canvas-area" id="canvasArea">
+        <div class="status-bar" id="statusBar">
+            <span id="statusTool">Select</span>
+            <span id="statusShapes">0 shapes</span>
+            <span id="statusPosition">X: 0 Y: 0</span>
+            <span id="statusZoom">100%</span>
+        </div>
+        <div class="zoom-control">
+            <button class="zoom-btn" id="zoomInBtn">+</button>
+            <div class="zoom-label" id="zoomLabel">100%</div>
+            <button class="zoom-btn" id="zoomOutBtn">-</button>
+        </div>
+    </div>
+
+    <script src="../dist/vexel.js"></script>
+    <script>
+        const vex = new Vexel({
+            container: '#canvasArea',
+            width: window.innerWidth - 356,
+            height: window.innerHeight,
+            grid: false,
+            snap: false
+        });
+
+        const statusTool = document.getElementById('statusTool');
+        const statusShapes = document.getElementById('statusShapes');
+        const statusPosition = document.getElementById('statusPosition');
+        const statusZoom = document.getElementById('statusZoom');
+        const zoomLabel = document.getElementById('zoomLabel');
+
+        let currentTool = 'select';
+        let isDrawing = false;
+        let drawStart = null;
+        let drawShape = null;
+
+        function updateStatus() {
+            statusShapes.textContent = vex.shapes.length + ' shapes';
+            statusZoom.textContent = Math.round(vex.viewport.zoom * 100) + '%';
+            zoomLabel.textContent = Math.round(vex.viewport.zoom * 100) + '%';
+        }
+
+        function updateProperties() {
+            if (vex.selectedShapes.length === 1) {
+                const shape = vex.selectedShapes[0];
+                document.getElementById('propX').value = Math.round(shape.x);
+                document.getElementById('propY').value = Math.round(shape.y);
+                const bounds = shape.getBounds();
+                document.getElementById('propW').value = Math.round(bounds.width);
+                document.getElementById('propH').value = Math.round(bounds.height);
+                document.getElementById('propFill').value = shape.fill || '#000000';
+                document.getElementById('propFillHex').value = shape.fill || '#000000';
+                document.getElementById('propStroke').value = shape.stroke || '#000000';
+                document.getElementById('propStrokeWidth').value = shape.strokeWidth || 1;
+                document.getElementById('propOpacity').value = (shape.opacity || 1) * 100;
+                document.getElementById('propOpacityVal').textContent = Math.round((shape.opacity || 1) * 100) + '%';
+                document.getElementById('propRotation').value = shape.rotation || 0;
+            }
+        }
+
+        document.querySelectorAll('.toolbar-btn[data-tool]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.toolbar-btn[data-tool]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTool = btn.dataset.tool;
+                statusTool.textContent = currentTool.charAt(0).toUpperCase() + currentTool.slice(1);
+                isDrawing = false;
+                drawShape = null;
+            });
+        });
+
+        document.getElementById('btnUndo').addEventListener('click', () => { vex.undo(); updateStatus(); });
+        document.getElementById('btnRedo').addEventListener('click', () => { vex.redo(); updateStatus(); });
+        document.getElementById('btnZoomIn').addEventListener('click', () => { vex.zoomIn(); updateStatus(); });
+        document.getElementById('btnZoomOut').addEventListener('click', () => { vex.zoomOut(); updateStatus(); });
+        document.getElementById('zoomInBtn').addEventListener('click', () => { vex.zoomIn(); updateStatus(); });
+        document.getElementById('zoomOutBtn').addEventListener('click', () => { vex.zoomOut(); updateStatus(); });
+
+        vex.on('pointermove', (data) => {
+            statusPosition.textContent = `X: ${Math.round(data.x)} Y: ${Math.round(data.y)}`;
+            if (isDrawing && drawShape && currentTool === 'rectangle') {
+                const w = data.x - drawStart.x;
+                const h = data.y - drawStart.y;
+                drawShape.x = Math.min(drawStart.x, data.x);
+                drawShape.y = Math.min(drawStart.y, data.y);
+                drawShape.width = Math.abs(w);
+                drawShape.height = Math.abs(h);
+                vex.dirty = true;
+            }
+            if (isDrawing && drawShape && currentTool === 'ellipse') {
+                drawShape.x = data.x;
+                drawShape.y = data.y;
+                drawShape.radiusX = Math.abs(data.x - drawStart.x);
+                drawShape.radiusY = Math.abs(data.y - drawStart.y);
+                vex.dirty = true;
+            }
+            if (isDrawing && drawShape && currentTool === 'line') {
+                drawShape.x2 = data.x;
+                drawShape.y2 = data.y;
+                vex.dirty = true;
+            }
+        });
+
+        vex.on('pointerdown', (data) => {
+            if (currentTool === 'select') return;
+            isDrawing = true;
+            drawStart = { x: data.x, y: data.y };
+            const options = {
+                fill: document.getElementById('propFill').value,
+                stroke: document.getElementById('propStroke').value,
+                strokeWidth: parseInt(document.getElementById('propStrokeWidth').value) || 1
+            };
+            if (currentTool === 'rectangle') {
+                drawShape = vex.rectangle(data.x, data.y, 1, 1, options);
+            } else if (currentTool === 'ellipse') {
+                drawShape = vex.ellipse(data.x, data.y, 1, 1, options);
+            } else if (currentTool === 'line') {
+                drawShape = vex.line(data.x, data.y, data.x, data.y, { stroke: options.stroke, strokeWidth: options.strokeWidth });
+            }
+            updateStatus();
+        });
+
+        vex.on('pointerup', () => {
+            if (isDrawing && drawShape) {
+                if (drawShape.width < 3 && drawShape.height < 3) {
+                    vex.remove(drawShape);
+                }
+            }
+            isDrawing = false;
+            drawShape = null;
+            updateStatus();
+        });
+
+        vex.on('click', (data) => {
+            if (currentTool === 'select') {
+                const shape = vex.getShapeAt(data.x, data.y);
+                if (shape) {
+                    if (!data.originalEvent?.shiftKey && !data.originalEvent?.metaKey) {
+                        vex.deselectAll();
+                    }
+                    vex.select(shape);
+                } else {
+                    vex.deselectAll();
+                }
+                updateProperties();
+            }
+            if (currentTool === 'text') {
+                const text = prompt('Enter text:');
+                if (text) {
+                    vex.text(data.x, data.y, text, {
+                        fontSize: 24,
+                        fill: document.getElementById('propFill').value
+                    });
+                    updateStatus();
+                }
+            }
+        });
+
+        document.getElementById('propX').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].x = parseFloat(this.value) || 0;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propY').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].y = parseFloat(this.value) || 0;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propW').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].width = parseFloat(this.value) || 1;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propH').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].height = parseFloat(this.value) || 1;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propFill').addEventListener('input', function() {
+            document.getElementById('propFillHex').value = this.value;
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].fill = this.value;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propFillHex').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].fill = this.value;
+                document.getElementById('propFill').value = this.value;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propStroke').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].stroke = this.value;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propStrokeWidth').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].strokeWidth = parseInt(this.value) || 1;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propOpacity').addEventListener('input', function() {
+            const val = parseInt(this.value) / 100;
+            document.getElementById('propOpacityVal').textContent = this.value + '%';
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].opacity = val;
+                vex.dirty = true;
+            }
+        });
+        document.getElementById('propRotation').addEventListener('input', function() {
+            if (vex.selectedShapes.length === 1) {
+                vex.selectedShapes[0].rotation = parseFloat(this.value) || 0;
+                vex.dirty = true;
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+                vex.deleteSelected();
+                updateStatus();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                if (e.shiftKey) { vex.redo(); } else { vex.undo(); }
+                updateStatus();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                e.preventDefault();
+                vex.copy();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                e.preventDefault();
+                vex.paste();
+                updateStatus();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                vex.duplicate();
+                updateStatus();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault();
+                vex.selectAll();
+                updateProperties();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            vex.resize(window.innerWidth - 356, window.innerHeight);
+            updateStatus();
+        });
+
+        updateStatus();
+        console.log('Vexel Playground ready');
+    </script>
+</body>
+</html>
