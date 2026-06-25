@@ -13,7 +13,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-ff5722" alt="Version">
   <img src="https://img.shields.io/badge/modules-50+-ff5722" alt="Modules">
-  <img src="https://img.shields.io/badge/lines-15,000+-ff5722" alt="Lines">
+  <img src="https://img.shields.io/badge/lines-20,000+-ff5722" alt="Lines">
   <img src="https://img.shields.io/badge/dependencies-zero-22c55e" alt="Dependencies">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
 </p>
