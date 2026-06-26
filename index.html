@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Vexel — Vector Graphics Engine</title>
     <link rel="icon" href="vexel.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
     <style>
         :root {
             --bg: #0c0a09;
@@ -18,11 +20,9 @@
             --accent-hover: #ff7043;
             --radius: 10px;
             --radius-lg: 14px;
-            --radius-xl: 20px;
             --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
             --spring: 0.45s cubic-bezier(0.34,1.56,0.64,1);
             --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            --mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
 
@@ -46,18 +46,18 @@
         .loader-overlay {
             position:fixed; inset:0; background:var(--bg); z-index:9999;
             display:flex; align-items:center; justify-content:center;
-            transition:opacity 0.3s, visibility 0.3s;
+            transition:opacity 0.35s, visibility 0.35s;
         }
         .loader-overlay.hidden { opacity:0; visibility:hidden; pointer-events:none; }
         .loader-ring {
-            width:40px; height:40px; border-radius:50%;
+            width:44px; height:44px; border-radius:50%;
             border:3px solid var(--surface2); border-top-color:var(--accent);
             animation:spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform:rotate(360deg); } }
 
         .sidebar {
-            width:360px; min-width:360px; background:var(--surface);
+            width:380px; min-width:380px; background:var(--surface);
             border-right:1px solid var(--border); display:flex; flex-direction:column;
             z-index:10; transition:transform var(--transition);
         }
@@ -98,39 +98,24 @@
         .run-btn:hover { background:var(--accent-hover); transform:translateY(-1px); box-shadow:0 4px 16px rgba(255,87,34,0.4); }
         .run-btn:active { transform:scale(0.94); }
 
-        .editor-wrapper { flex:1; display:flex; overflow:hidden; position:relative; }
-        .line-numbers {
-            width:42px; background:var(--surface2); padding:14px 0;
-            font-family:var(--mono); font-size:11px; line-height:1.75;
-            color:var(--text-muted); text-align:right; user-select:none;
-            overflow:hidden; flex-shrink:0;
+        .editor-container {
+            flex:1; overflow:hidden; position:relative;
         }
-        .line-numbers span { display:block; padding-right:10px; }
-        .highlight-layer {
-            position:absolute; top:0; left:42px; right:0; bottom:0;
-            padding:14px; font-family:var(--mono); font-size:12.5px;
-            line-height:1.75; pointer-events:none; white-space:pre-wrap;
-            word-break:break-all; overflow:hidden; color:transparent;
+        .editor-container .CodeMirror {
+            height:100%; font-family:'SF Mono','JetBrains Mono','Fira Code',monospace;
+            font-size:12.5px; line-height:1.7; background:var(--surface) !important;
         }
-        .highlight-layer .kw { color:#ff5722; }
-        .highlight-layer .str { color:#22c55e; }
-        .highlight-layer .num { color:#3b82f6; }
-        .highlight-layer .cm { color:#78716c; font-style:italic; }
-        .highlight-layer .fn { color:#a855f7; }
-        .highlight-layer .prop { color:#f59e0b; }
-        .highlight-layer .paren { color:#ec4899; }
-        textarea.code-input {
-            flex:1; background:transparent; border:none; color:var(--text);
-            font-family:var(--mono); font-size:12.5px; line-height:1.75;
-            padding:14px; resize:none; outline:none; tab-size:2;
-            caret-color:var(--accent); position:relative; z-index:1;
-            white-space:pre-wrap; word-break:break-all;
+        .editor-container .CodeMirror-gutters {
+            background:var(--surface2) !important; border-right:1px solid var(--border) !important;
         }
-        textarea.code-input::selection { background:rgba(255,87,34,0.35); color:#fff; }
+        .editor-container .CodeMirror-linenumber { color:var(--text-muted) !important; }
+        .editor-container .CodeMirror-cursor { border-left-color:var(--accent) !important; }
+        .editor-container .CodeMirror-selected { background:rgba(255,87,34,0.25) !important; }
+        .editor-container .CodeMirror-activeline-background { background:rgba(255,255,255,0.03) !important; }
 
         .error-bar {
             background:rgba(239,68,68,0.1); border-top:1px solid rgba(239,68,68,0.2);
-            color:#ef4444; padding:10px 14px; font-size:11px; font-family:var(--mono);
+            color:#ef4444; padding:10px 14px; font-size:11px; font-family:var(--font);
             display:none; animation:slideUp 0.3s ease;
         }
         @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -216,11 +201,7 @@
                 <span class="code-tab">script.js</span>
                 <span style="font-size:10px;color:var(--text-muted);">Ctrl+Enter</span>
             </div>
-            <div class="editor-wrapper">
-                <div class="line-numbers" id="lineNumbers"></div>
-                <div class="highlight-layer" id="highlightLayer"></div>
-                <textarea class="code-input" id="codeInput" spellcheck="false" placeholder="// Write Vexel code here..."></textarea>
-            </div>
+            <div class="editor-container" id="editorContainer"></div>
             <div class="error-bar" id="errorBar"></div>
         </div>
     </div>
@@ -242,6 +223,8 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/spideythedev/vexel@main/dist/vexel.js"></script>
     <script>
         window.addEventListener('load', () => {
@@ -257,19 +240,17 @@
         });
 
         const container = document.getElementById('canvasContainer');
-        const codeInput = document.getElementById('codeInput');
         const errorBar = document.getElementById('errorBar');
-        const lineNumbers = document.getElementById('lineNumbers');
-        const highlightLayer = document.getElementById('highlightLayer');
         const statusShapes = document.getElementById('statusShapes');
         const statusZoom = document.getElementById('statusZoom');
         const sidebar = document.getElementById('sidebar');
 
         const defaultCode = `// Vexel — Vector Graphics Engine
-// Ctrl+Enter to run
+// Press Ctrl+Enter to run
 
 vex.clear();
 
+// Orange rounded rectangle
 vex.rectangle(40, 40, 220, 140, {
   fill: '#FF5722',
   stroke: '#1c1917',
@@ -277,24 +258,30 @@ vex.rectangle(40, 40, 220, 140, {
   cornerRadius: 16
 });
 
+// Blue circle
 vex.ellipse(340, 110, 65, 65, {
   fill: '#3B82F6',
   opacity: 0.85
 });
 
+// Green triangle
 vex.polygon(520, 110, 3, 55, {
   fill: '#22C55E'
 });
 
+// Dashed line
 vex.line(40, 240, 640, 240, {
   stroke: '#1c1917',
   strokeWidth: 2,
   strokeDash: [8, 4]
 });
 
+// Purple path
 vex.path([
-  { x: 40, y: 300 }, { x: 140, y: 270 },
-  { x: 240, y: 330 }, { x: 190, y: 390 },
+  { x: 40, y: 300 },
+  { x: 140, y: 270 },
+  { x: 240, y: 330 },
+  { x: 190, y: 390 },
   { x: 70, y: 370 }
 ], {
   fill: '#7C3AED',
@@ -303,18 +290,36 @@ vex.path([
   closed: true
 });
 
+// Bold text
 vex.text(400, 330, 'Hello Vexel', {
-  fontSize: 34, fontWeight: '800',
+  fontSize: 34,
+  fontWeight: '800',
   fill: '#FF5722'
 });
 
 vex.text(400, 375, 'The Vector Graphics Engine', {
-  fontSize: 12, fill: '#78716c', fontWeight: '500'
+  fontSize: 12,
+  fill: '#78716c',
+  fontWeight: '500'
 });
 
 vex.zoomToFit();`;
 
-        codeInput.value = defaultCode;
+        const editor = CodeMirror(document.getElementById('editorContainer'), {
+            value: defaultCode,
+            mode: 'javascript',
+            theme: 'material-darker',
+            lineNumbers: true,
+            indentUnit: 2,
+            tabSize: 2,
+            indentWithTabs: false,
+            lineWrapping: true,
+            autofocus: true,
+            extraKeys: {
+                'Ctrl-Enter': runCode,
+                'Cmd-Enter': runCode
+            }
+        });
 
         const vex = new Vexel({
             container: container,
@@ -322,27 +327,6 @@ vex.zoomToFit();`;
             height: container.clientHeight,
             grid: false
         });
-
-        function updateLineNumbers() {
-            const lines = codeInput.value.split('\n');
-            lineNumbers.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
-        }
-
-        function highlightSyntax(code) {
-            return code
-                .replace(/(\/\/.*)/g, '<span class="cm">$1</span>')
-                .replace(/(['"`])(?:(?!\1)[^\\]|\\.)*\1/g, '<span class="str">$&</span>')
-                .replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>')
-                .replace(/\b(vex|new|function|return|const|let|var|if|else|for|while)\b/g, '<span class="kw">$1</span>')
-                .replace(/\.([a-zA-Z_]\w*)/g, '.<span class="prop">$1</span>')
-                .replace(/\b([a-zA-Z_]\w*)\s*\(/g, '<span class="fn">$1</span>(')
-                .replace(/[{}()[\]]/g, '<span class="paren">$&</span>');
-        }
-
-        function updateHighlight() {
-            highlightLayer.innerHTML = highlightSyntax(codeInput.value);
-            updateLineNumbers();
-        }
 
         function showError(msg) {
             errorBar.textContent = msg;
@@ -357,7 +341,7 @@ vex.zoomToFit();`;
 
         function runCode() {
             try {
-                const fn = new Function('vex', codeInput.value);
+                const fn = new Function('vex', editor.getValue());
                 fn(vex);
                 errorBar.classList.remove('show');
                 updateStatus();
@@ -366,36 +350,29 @@ vex.zoomToFit();`;
             }
         }
 
-        codeInput.addEventListener('input', updateHighlight);
-        codeInput.addEventListener('scroll', () => {
-            lineNumbers.scrollTop = codeInput.scrollTop;
-            highlightLayer.scrollTop = codeInput.scrollTop;
-        });
-
         document.getElementById('runBtn').addEventListener('click', runCode);
         document.getElementById('newBtn').addEventListener('click', () => {
-            codeInput.value = 'vex.clear();\n';
-            updateHighlight();
+            editor.setValue('vex.clear();\n');
             runCode();
         });
         document.getElementById('formatBtn').addEventListener('click', () => {
             try {
-                const formatted = codeInput.value
+                const code = editor.getValue();
+                const formatted = code
                     .replace(/\s*\{\s*/g, ' {\n  ')
                     .replace(/\s*\}\s*/g, '\n}\n')
                     .replace(/;\s*/g, ';\n');
-                codeInput.value = formatted;
-                updateHighlight();
+                editor.setValue(formatted);
             } catch(e) {}
         });
         document.getElementById('copyCodeBtn').addEventListener('click', () => {
-            navigator.clipboard.writeText(codeInput.value);
+            navigator.clipboard.writeText(editor.getValue());
             const btn = document.getElementById('copyCodeBtn');
             btn.textContent = 'Copied';
             setTimeout(() => btn.textContent = 'Copy', 1500);
         });
         document.getElementById('shareBtn').addEventListener('click', () => {
-            const encoded = encodeURIComponent(codeInput.value);
+            const encoded = encodeURIComponent(editor.getValue());
             const url = `${window.location.origin}${window.location.pathname}?code=${encoded}`;
             navigator.clipboard.writeText(url);
             const btn = document.getElementById('shareBtn');
@@ -418,13 +395,6 @@ vex.zoomToFit();`;
             sidebar.classList.toggle('open');
         });
 
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                runCode();
-            }
-        });
-
         window.addEventListener('resize', () => {
             vex.resize(container.clientWidth, container.clientHeight);
             updateStatus();
@@ -432,10 +402,9 @@ vex.zoomToFit();`;
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('code')) {
-            codeInput.value = decodeURIComponent(urlParams.get('code'));
+            editor.setValue(decodeURIComponent(urlParams.get('code')));
         }
 
-        updateHighlight();
         runCode();
         updateStatus();
     </script>
