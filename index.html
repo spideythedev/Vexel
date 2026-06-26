@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Vexel — Vector Graphics Engine</title>
+    <title>Vexel Playground</title>
     <link rel="icon" href="vexel.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
@@ -19,18 +19,20 @@
             --accent: #ff5722;
             --accent-hover: #ff7043;
             --radius: 10px;
-            --radius-lg: 14px;
             --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
             --spring: 0.45s cubic-bezier(0.34,1.56,0.64,1);
             --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --header-height: 44px;
+            --status-height: 28px;
         }
 
         * { margin:0; padding:0; box-sizing:border-box; }
         html { height:100%; background:var(--bg); }
         body {
             font-family:var(--font); background:var(--bg); color:var(--text);
-            height:100%; display:flex; overflow:hidden;
+            height:100%; display:flex; flex-direction:column; overflow:hidden;
         }
 
         .ripple {
@@ -56,119 +58,102 @@
         }
         @keyframes spin { to { transform:rotate(360deg); } }
 
-        .sidebar {
-            width:380px; min-width:380px; background:var(--surface);
-            border-right:1px solid var(--border); display:flex; flex-direction:column;
-            z-index:10; transition:transform var(--transition);
+        .header {
+            height:var(--header-height); min-height:var(--header-height);
+            background:var(--surface); border-bottom:1px solid var(--border);
+            display:flex; align-items:center; padding:0 10px; gap:8px;
+            z-index:20;
         }
-        .sidebar-brand {
-            display:flex; align-items:center; gap:10px;
-            padding:14px 16px; border-bottom:1px solid var(--border);
-        }
-        .sidebar-brand img { width:32px; height:32px; object-fit:contain; flex-shrink:0; animation:logoPulse 3s ease-in-out infinite; }
+        .header-logo { display:flex; align-items:center; gap:8px; margin-right:12px; }
+        .header-logo img { width:26px; height:26px; object-fit:contain; animation:logoPulse 3s ease-in-out infinite; }
         @keyframes logoPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-        .sidebar-brand h1 { font-size:16px; font-weight:700; letter-spacing:-0.3px; }
-        .sidebar-brand .ver { font-size:9px; color:var(--accent); font-weight:600; margin-left:auto; }
+        .header-logo span { font-size:14px; font-weight:700; letter-spacing:-0.3px; }
 
-        .toolbar-row {
-            display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid var(--border);
-            flex-wrap:wrap;
+        .tab-nav { display:flex; gap:2px; flex:1; }
+        .tab-btn {
+            padding:8px 16px; border:none; background:transparent; color:var(--text-muted);
+            font-size:11px; font-weight:600; cursor:pointer; font-family:var(--font);
+            border-bottom:2px solid transparent; transition:var(--transition);
+            white-space:nowrap;
         }
-        .tool-btn {
-            padding:7px 12px; border-radius:var(--radius); border:1px solid var(--border);
+        .tab-btn:hover { color:var(--text); }
+        .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+        .header-actions { display:flex; gap:6px; align-items:center; }
+        .header-btn {
+            padding:6px 12px; border-radius:20px; border:1px solid var(--border);
             background:transparent; color:var(--text-secondary); cursor:pointer;
             font-size:10px; font-weight:600; font-family:var(--font); transition:var(--transition);
             white-space:nowrap;
         }
-        .tool-btn:hover { background:var(--surface2); color:var(--text); border-color:var(--text-muted); }
-        .tool-btn.accent { border-color:var(--accent); color:var(--accent); }
-        .tool-btn.accent:hover { background:var(--accent); color:#fff; }
+        .header-btn:hover { background:var(--surface2); color:var(--text); border-color:var(--text-muted); }
+        .header-btn.accent { border-color:var(--accent); color:var(--accent); }
+        .header-btn.accent:hover { background:var(--accent); color:#fff; }
 
-        .code-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-        .code-header {
-            display:flex; align-items:center; justify-content:space-between;
-            padding:10px 14px; background:var(--surface2); border-bottom:1px solid var(--border);
-        }
-        .code-tab { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); }
-        .run-btn {
-            padding:7px 18px; border:none; border-radius:20px;
-            background:var(--accent); color:#fff; font-size:10px; font-weight:600;
-            cursor:pointer; font-family:var(--font); transition:var(--spring);
-        }
-        .run-btn:hover { background:var(--accent-hover); transform:translateY(-1px); box-shadow:0 4px 16px rgba(255,87,34,0.4); }
-        .run-btn:active { transform:scale(0.94); }
+        .main-content { flex:1; position:relative; overflow:hidden; }
 
-        .editor-container {
-            flex:1; overflow:hidden; position:relative;
-        }
-        .editor-container .CodeMirror {
-            height:100%; font-family:'SF Mono','JetBrains Mono','Fira Code',monospace;
-            font-size:12.5px; line-height:1.7; background:var(--surface) !important;
-        }
-        .editor-container .CodeMirror-gutters {
-            background:var(--surface2) !important; border-right:1px solid var(--border) !important;
-        }
-        .editor-container .CodeMirror-linenumber { color:var(--text-muted) !important; }
-        .editor-container .CodeMirror-cursor { border-left-color:var(--accent) !important; }
-        .editor-container .CodeMirror-selected { background:rgba(255,87,34,0.25) !important; }
-        .editor-container .CodeMirror-activeline-background { background:rgba(255,255,255,0.03) !important; }
+        .panel { position:absolute; inset:0; display:none; flex-direction:column; }
+        .panel.active { display:flex; }
 
-        .error-bar {
-            background:rgba(239,68,68,0.1); border-top:1px solid rgba(239,68,68,0.2);
-            color:#ef4444; padding:10px 14px; font-size:11px; font-family:var(--font);
-            display:none; animation:slideUp 0.3s ease;
+        .code-panel .editor-container { flex:1; overflow:hidden; }
+        .code-panel .CodeMirror {
+            height:100%; font-family:var(--mono); font-size:12.5px; line-height:1.7;
+            background:var(--surface) !important;
         }
-        @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
-        .error-bar.show { display:block; }
+        .code-panel .CodeMirror-gutters { background:var(--surface2) !important; border-right:1px solid var(--border) !important; }
+        .code-panel .CodeMirror-linenumber { color:var(--text-muted) !important; }
+        .code-panel .CodeMirror-cursor { border-left-color:var(--accent) !important; }
+        .code-panel .CodeMirror-selected { background:rgba(255,87,34,0.25) !important; }
 
-        .canvas-area { flex:1; position:relative; overflow:hidden; background:#fafaf9; }
-        .canvas-area canvas { position:absolute; top:0; left:0; }
+        .output-panel { background:#fafaf9; }
+        .output-panel canvas { position:absolute; top:0; left:0; }
 
         .canvas-toolbar {
-            position:absolute; top:14px; right:14px; display:flex; gap:6px; z-index:10;
+            position:absolute; top:12px; right:12px; display:flex; gap:5px; z-index:10;
         }
         .canvas-btn {
-            width:34px; height:34px; border-radius:var(--radius); border:1px solid #ddd;
-            background:#fff; color:#1c1917; cursor:pointer; font-size:13px;
+            width:32px; height:32px; border-radius:var(--radius); border:1px solid #ddd;
+            background:#fff; color:#1c1917; cursor:pointer; font-size:12px;
             display:flex; align-items:center; justify-content:center;
             transition:var(--spring); font-family:var(--font); font-weight:600;
             box-shadow:0 1px 3px rgba(0,0,0,0.06);
         }
-        .canvas-btn:hover { background:#f5f5f5; border-color:#ccc; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-        .canvas-btn:active { transform:scale(0.93); }
+        .canvas-btn:hover { background:#f5f5f5; border-color:#ccc; transform:translateY(-1px); }
+
+        .console-panel { background:var(--surface); flex-direction:column; }
+        .console-output {
+            flex:1; overflow-y:auto; padding:12px 16px;
+            font-family:var(--mono); font-size:11.5px; line-height:1.6;
+        }
+        .console-line { padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+        .console-line .ts { color:var(--text-muted); margin-right:8px; font-size:10px; }
+        .console-line.log { color:#a8a29e; }
+        .console-line.error { color:#ef4444; }
+        .console-line.warn { color:#f59e0b; }
+        .console-line.info { color:#3b82f6; }
+        .console-line.result { color:#22c55e; }
 
         .status-bar {
-            position:absolute; bottom:0; left:0; right:0;
-            height:28px; background:#fff; border-top:1px solid #e7e5e4;
+            height:var(--status-height); min-height:var(--status-height);
+            background:var(--surface); border-top:1px solid var(--border);
             display:flex; align-items:center; padding:0 14px;
-            font-size:10px; color:#78716c; gap:18px; z-index:10;
+            font-size:10px; color:var(--text-muted); gap:18px; z-index:10;
         }
+        .status-bar .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
         .watermark {
-            position:absolute; bottom:48px; right:24px;
+            position:absolute; bottom:40px; right:20px;
             opacity:0.025; pointer-events:none; z-index:0;
         }
         .watermark img { width:200px; height:200px; object-fit:contain; }
 
-        .mobile-menu-btn {
-            display:none; position:absolute; top:14px; left:14px; z-index:20;
-            width:36px; height:36px; border-radius:var(--radius); border:1px solid #ddd;
-            background:#fff; cursor:pointer; font-size:16px;
-            align-items:center; justify-content:center;
-        }
-
         @media (max-width:768px) {
-            body { flex-direction:column; }
-            .sidebar {
-                position:fixed; top:0; left:0; bottom:0; width:100%; min-width:100%;
-                transform:translateX(-100%); z-index:50;
-            }
-            .sidebar.open { transform:translateX(0); }
-            .canvas-area { height:100%; }
-            .mobile-menu-btn { display:flex; }
-            .canvas-toolbar { top:10px; right:10px; gap:4px; }
-            .canvas-btn { width:30px; height:30px; font-size:12px; }
-            .toolbar-row { gap:4px; padding:8px 10px; }
-            .tool-btn { padding:6px 10px; font-size:9px; }
+            .header { padding:0 6px; gap:4px; }
+            .header-logo span { display:none; }
+            .tab-btn { padding:8px 10px; font-size:10px; }
+            .header-btn { padding:5px 8px; font-size:9px; }
+            .canvas-btn { width:28px; height:28px; font-size:11px; }
         }
     </style>
 </head>
@@ -178,49 +163,53 @@
         <div class="loader-ring"></div>
     </div>
 
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
+    <header class="header">
+        <div class="header-logo">
             <img src="vexel.png" alt="Vexel">
-            <div>
-                <h1>Vexel</h1>
-                <div style="font-size:9px;color:var(--text-muted);">Vector Graphics Engine</div>
-            </div>
-            <span class="ver">v1.0</span>
+            <span>Vexel</span>
         </div>
-
-        <div class="toolbar-row">
-            <button class="tool-btn ripple" id="newBtn">New</button>
-            <button class="tool-btn ripple" id="formatBtn">Format</button>
-            <button class="tool-btn ripple" id="copyCodeBtn">Copy</button>
-            <button class="tool-btn ripple" id="shareBtn">Share</button>
-            <button class="tool-btn accent ripple" id="runBtn">Run</button>
+        <div class="tab-nav">
+            <button class="tab-btn active ripple" data-panel="code">Code</button>
+            <button class="tab-btn ripple" data-panel="output">Output</button>
+            <button class="tab-btn ripple" data-panel="console">Console</button>
         </div>
+        <div class="header-actions">
+            <button class="header-btn ripple" id="newBtn">New</button>
+            <button class="header-btn ripple" id="formatBtn">Format</button>
+            <button class="header-btn ripple" id="shareBtn">Share</button>
+            <button class="header-btn accent ripple" id="runBtn">Run</button>
+        </div>
+    </header>
 
-        <div class="code-area">
-            <div class="code-header">
-                <span class="code-tab">script.js</span>
-                <span style="font-size:10px;color:var(--text-muted);">Ctrl+Enter</span>
-            </div>
+    <div class="main-content">
+        <div class="panel code-panel active" id="panelCode">
             <div class="editor-container" id="editorContainer"></div>
-            <div class="error-bar" id="errorBar"></div>
+        </div>
+
+        <div class="panel output-panel" id="panelOutput">
+            <div class="canvas-toolbar">
+                <button class="canvas-btn ripple" id="zoomInBtn">+</button>
+                <button class="canvas-btn ripple" id="zoomOutBtn">-</button>
+                <button class="canvas-btn ripple" id="fitBtn">F</button>
+                <button class="canvas-btn ripple" id="svgBtn">S</button>
+                <button class="canvas-btn ripple" id="pngBtn">P</button>
+            </div>
+            <div class="watermark"><img src="vexel.png" alt="Vexel"></div>
+        </div>
+
+        <div class="panel console-panel" id="panelConsole">
+            <div class="console-output" id="consoleOutput">
+                <div class="console-line log"><span class="ts">00:00:00</span>Console ready. Run your code to see output.</div>
+            </div>
         </div>
     </div>
 
-    <div class="canvas-area" id="canvasContainer">
-        <button class="mobile-menu-btn ripple" id="mobileMenuBtn">M</button>
-        <div class="canvas-toolbar">
-            <button class="canvas-btn ripple" id="zoomInBtn">+</button>
-            <button class="canvas-btn ripple" id="zoomOutBtn">-</button>
-            <button class="canvas-btn ripple" id="fitBtn">F</button>
-            <button class="canvas-btn ripple" id="svgBtn">S</button>
-            <button class="canvas-btn ripple" id="pngBtn">P</button>
-        </div>
-        <div class="watermark"><img src="vexel.png" alt="Vexel"></div>
-        <div class="status-bar">
-            <span id="statusShapes">0 shapes</span>
-            <span id="statusZoom">100%</span>
-            <span>Vexel v1.0 · FlamicsLLC</span>
-        </div>
+    <div class="status-bar">
+        <span class="dot"></span>
+        <span id="statusShapes">0 shapes</span>
+        <span id="statusZoom">100%</span>
+        <span>Vexel v1.0</span>
+        <span style="margin-left:auto;">FlamicsLLC</span>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
@@ -239,16 +228,58 @@
             target.style.setProperty('--ry', (e.clientY - rect.top) + 'px');
         });
 
-        const container = document.getElementById('canvasContainer');
-        const errorBar = document.getElementById('errorBar');
+        const outputPanel = document.getElementById('panelOutput');
+        const consoleOutput = document.getElementById('consoleOutput');
         const statusShapes = document.getElementById('statusShapes');
         const statusZoom = document.getElementById('statusZoom');
-        const sidebar = document.getElementById('sidebar');
+        let consoleLines = [];
+
+        function addConsole(type, msg) {
+            const now = new Date();
+            const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+            consoleLines.push({ type, msg, ts });
+            if (consoleLines.length > 200) consoleLines.shift();
+            renderConsole();
+        }
+
+        function clearConsole() {
+            consoleLines = [];
+            renderConsole();
+        }
+
+        function renderConsole() {
+            if (consoleLines.length === 0) {
+                consoleOutput.innerHTML = '<div class="console-line log"><span class="ts">--:--:--</span>Console ready.</div>';
+                return;
+            }
+            consoleOutput.innerHTML = consoleLines.map(l =>
+                `<div class="console-line ${l.type}"><span class="ts">${l.ts}</span>${l.msg}</div>`
+            ).join('');
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addConsole('log', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+        };
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addConsole('error', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+        };
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addConsole('warn', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+        };
 
         const defaultCode = `// Vexel — Vector Graphics Engine
 // Press Ctrl+Enter to run
 
 vex.clear();
+console.clear();
 
 // Orange rounded rectangle
 vex.rectangle(40, 40, 220, 140, {
@@ -278,10 +309,8 @@ vex.line(40, 240, 640, 240, {
 
 // Purple path
 vex.path([
-  { x: 40, y: 300 },
-  { x: 140, y: 270 },
-  { x: 240, y: 330 },
-  { x: 190, y: 390 },
+  { x: 40, y: 300 }, { x: 140, y: 270 },
+  { x: 240, y: 330 }, { x: 190, y: 390 },
   { x: 70, y: 370 }
 ], {
   fill: '#7C3AED',
@@ -290,20 +319,17 @@ vex.path([
   closed: true
 });
 
-// Bold text
+// Text
 vex.text(400, 330, 'Hello Vexel', {
-  fontSize: 34,
-  fontWeight: '800',
-  fill: '#FF5722'
+  fontSize: 34, fontWeight: '800', fill: '#FF5722'
 });
 
 vex.text(400, 375, 'The Vector Graphics Engine', {
-  fontSize: 12,
-  fill: '#78716c',
-  fontWeight: '500'
+  fontSize: 12, fill: '#78716c', fontWeight: '500'
 });
 
-vex.zoomToFit();`;
+vex.zoomToFit();
+console.log('Vexel ready — ' + vex.shapes.length + ' shapes rendered');`;
 
         const editor = CodeMirror(document.getElementById('editorContainer'), {
             value: defaultCode,
@@ -314,25 +340,18 @@ vex.zoomToFit();`;
             tabSize: 2,
             indentWithTabs: false,
             lineWrapping: true,
-            autofocus: true,
             extraKeys: {
-                'Ctrl-Enter': runCode,
-                'Cmd-Enter': runCode
+                'Ctrl-Enter': () => runCode(),
+                'Cmd-Enter': () => runCode()
             }
         });
 
         const vex = new Vexel({
-            container: container,
-            width: container.clientWidth,
-            height: container.clientHeight,
+            container: outputPanel,
+            width: outputPanel.clientWidth,
+            height: outputPanel.clientHeight,
             grid: false
         });
-
-        function showError(msg) {
-            errorBar.textContent = msg;
-            errorBar.classList.add('show');
-            setTimeout(() => errorBar.classList.remove('show'), 4000);
-        }
 
         function updateStatus() {
             statusShapes.textContent = vex.shapes.length + ' shapes';
@@ -340,45 +359,56 @@ vex.zoomToFit();`;
         }
 
         function runCode() {
+            clearConsole();
+            addConsole('info', 'Running...');
             try {
-                const fn = new Function('vex', editor.getValue());
-                fn(vex);
-                errorBar.classList.remove('show');
+                const fn = new Function('vex', 'console', editor.getValue());
+                fn(vex, console);
+                addConsole('result', 'Execution complete — ' + vex.shapes.length + ' shapes');
                 updateStatus();
             } catch (e) {
-                showError(e.message);
+                addConsole('error', e.message);
             }
         }
 
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                document.getElementById('panel' + btn.dataset.panel.charAt(0).toUpperCase() + btn.dataset.panel.slice(1)).classList.add('active');
+                if (btn.dataset.panel === 'output') {
+                    setTimeout(() => {
+                        vex.resize(outputPanel.clientWidth, outputPanel.clientHeight);
+                        vex.dirty = true;
+                    }, 100);
+                }
+                if (btn.dataset.panel === 'code') {
+                    setTimeout(() => editor.refresh(), 100);
+                }
+            });
+        });
+
         document.getElementById('runBtn').addEventListener('click', runCode);
         document.getElementById('newBtn').addEventListener('click', () => {
-            editor.setValue('vex.clear();\n');
+            editor.setValue('vex.clear();\nconsole.clear();\n');
             runCode();
         });
         document.getElementById('formatBtn').addEventListener('click', () => {
             try {
                 const code = editor.getValue();
-                const formatted = code
-                    .replace(/\s*\{\s*/g, ' {\n  ')
-                    .replace(/\s*\}\s*/g, '\n}\n')
-                    .replace(/;\s*/g, ';\n');
-                editor.setValue(formatted);
+                editor.setValue(code.replace(/\s*\{\s*/g, ' {\n  ').replace(/\s*\}\s*/g, '\n}\n').replace(/;\s*/g, ';\n'));
             } catch(e) {}
-        });
-        document.getElementById('copyCodeBtn').addEventListener('click', () => {
-            navigator.clipboard.writeText(editor.getValue());
-            const btn = document.getElementById('copyCodeBtn');
-            btn.textContent = 'Copied';
-            setTimeout(() => btn.textContent = 'Copy', 1500);
         });
         document.getElementById('shareBtn').addEventListener('click', () => {
             const encoded = encodeURIComponent(editor.getValue());
             const url = `${window.location.origin}${window.location.pathname}?code=${encoded}`;
             navigator.clipboard.writeText(url);
             const btn = document.getElementById('shareBtn');
-            btn.textContent = 'Link Copied';
+            btn.textContent = 'Copied';
             setTimeout(() => btn.textContent = 'Share', 1500);
         });
+
         document.getElementById('zoomInBtn').addEventListener('click', () => { vex.zoomIn(); updateStatus(); });
         document.getElementById('zoomOutBtn').addEventListener('click', () => { vex.zoomOut(); updateStatus(); });
         document.getElementById('fitBtn').addEventListener('click', () => { vex.zoomToFit(); updateStatus(); });
@@ -391,12 +421,17 @@ vex.zoomToFit();`;
             const blob = await vex.exportPNG(1);
             window.open(URL.createObjectURL(blob));
         });
-        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-            sidebar.classList.toggle('open');
+
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === '1') { document.querySelector('.tab-btn[data-panel="code"]').click(); e.preventDefault(); }
+                if (e.key === '2') { document.querySelector('.tab-btn[data-panel="output"]').click(); e.preventDefault(); }
+                if (e.key === '3') { document.querySelector('.tab-btn[data-panel="console"]').click(); e.preventDefault(); }
+            }
         });
 
         window.addEventListener('resize', () => {
-            vex.resize(container.clientWidth, container.clientHeight);
+            vex.resize(outputPanel.clientWidth, outputPanel.clientHeight);
             updateStatus();
         });
 
