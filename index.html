@@ -154,6 +154,7 @@
             .tab-btn { padding:8px 10px; font-size:10px; }
             .header-btn { padding:5px 8px; font-size:9px; }
             .canvas-btn { width:28px; height:28px; font-size:11px; }
+            .canvas-toolbar { top:8px; right:8px; gap:3px; }
         }
     </style>
 </head>
@@ -319,7 +320,7 @@ vex.path([
   closed: true
 });
 
-// Text
+// Bold text
 vex.text(400, 330, 'Hello Vexel', {
   fontSize: 34, fontWeight: '800', fill: '#FF5722'
 });
@@ -329,7 +330,7 @@ vex.text(400, 375, 'The Vector Graphics Engine', {
 });
 
 vex.zoomToFit();
-console.log('Vexel ready — ' + vex.shapes.length + ' shapes rendered');`;
+console.log('Vexel ready — ' + vex.shapes.length + ' shapes');`;
 
         const editor = CodeMirror(document.getElementById('editorContainer'), {
             value: defaultCode,
@@ -348,8 +349,8 @@ console.log('Vexel ready — ' + vex.shapes.length + ' shapes rendered');`;
 
         const vex = new Vexel({
             container: outputPanel,
-            width: outputPanel.clientWidth,
-            height: outputPanel.clientHeight,
+            width: Math.max(outputPanel.clientWidth, 300),
+            height: Math.max(outputPanel.clientHeight, 200),
             grid: false
         });
 
@@ -376,15 +377,23 @@ console.log('Vexel ready — ' + vex.shapes.length + ' shapes rendered');`;
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-                document.getElementById('panel' + btn.dataset.panel.charAt(0).toUpperCase() + btn.dataset.panel.slice(1)).classList.add('active');
+                const panelName = 'panel' + btn.dataset.panel.charAt(0).toUpperCase() + btn.dataset.panel.slice(1);
+                document.getElementById(panelName).classList.add('active');
+
                 if (btn.dataset.panel === 'output') {
                     setTimeout(() => {
-                        vex.resize(outputPanel.clientWidth, outputPanel.clientHeight);
-                        vex.dirty = true;
-                    }, 100);
+                        const w = outputPanel.clientWidth;
+                        const h = outputPanel.clientHeight;
+                        if (w > 0 && h > 0) {
+                            vex.resize(w, h);
+                            vex.dirty = true;
+                            updateStatus();
+                        }
+                    }, 200);
                 }
+
                 if (btn.dataset.panel === 'code') {
-                    setTimeout(() => editor.refresh(), 100);
+                    setTimeout(() => editor.refresh(), 200);
                 }
             });
         });
@@ -431,8 +440,12 @@ console.log('Vexel ready — ' + vex.shapes.length + ' shapes rendered');`;
         });
 
         window.addEventListener('resize', () => {
-            vex.resize(outputPanel.clientWidth, outputPanel.clientHeight);
-            updateStatus();
+            const w = outputPanel.clientWidth;
+            const h = outputPanel.clientHeight;
+            if (w > 0 && h > 0) {
+                vex.resize(w, h);
+                updateStatus();
+            }
         });
 
         const urlParams = new URLSearchParams(window.location.search);
