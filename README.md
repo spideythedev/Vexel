@@ -22,6 +22,8 @@
 
 ## Overview
 
+![Banner](./banner.png)
+
 Vexel is a professional-grade vector graphics engine written entirely in JavaScript. It provides a complete toolkit for building browser-based design applications — from simple drawing tools to full-featured collaborative design platforms.
 
 Vexel handles the hard parts:
