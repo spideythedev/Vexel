@@ -1,5 +1,5 @@
 <p align="center">
-  ![Vexel](./vexel.png)
+  <img src="vexel.png" alt="vexel" width="100px">
 </p>
 
 <h1 align="center">Vexel</h1>
