@@ -1,5 +1,3 @@
-// src/style/fill.js
-
 class VexelFill {
     static solid(color) {
         return {
